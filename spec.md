@@ -209,24 +209,7 @@ interface ReceiptRepository {
 
 ---
 
-## 8. Build Order
-
-Each step is independently testable and builds on the last.
-
-1. **Project scaffold** — Vite + Vue + TS, `vue-router` with the three routes as stubs, ESLint/Prettier. App runs with empty pages.
-2. **Domain types + service-type config** — `Vehicle`, `ServiceRecord` types; the `ServiceTypeConfig` shape; the two seed configs (oil change, tire rotation); the derived `details` union. Pure TS, unit-testable, no UI.
-3. **Repository interface + Dexie implementation** — define interfaces (§7); implement `DexieServiceRepository` / `DexieVehicleRepository`; UUID generation; Zod validation of `details` in `add`/`update`. Test directly against a fake/in-memory Dexie.
-4. **Composables** — `useVehicles()`, `useServiceRecords()` wrapping the repositories with Vue reactivity. Components will only ever import these.
-5. **Vehicle CRUD (`/vehicles`)** — list, add/edit modal, delete. First real UI; exercises the vehicle repository end to end.
-6. **Config-driven `<ServiceRecordForm>`** — renders common fields + dynamic `details` fields from a service type config. Handles the empty-details case (tire rotation). Client-side validation mirrors the Zod schema.
-   6.5. **Receipts** — `Receipt` Dexie table + `ReceiptRepository` (Blob storage, UUID, object-URL helper, cascade-delete wired into `ServiceRecordRepository.delete`). Add a `useReceipts()` composable owning the object-URL revoke lifecycle. Extend `<ServiceRecordForm>` with a multi-file input (`image/*,application/pdf`), thumbnail previews, per-file remove, and the soft ~5MB size guard (warn; optional image downscale).
-7. **Vehicle history (`/vehicles/:id`)** — list a vehicle's records; open the form modal to add/edit; derive `currentOdometer` to pre-fill odometer.
-8. **Dashboard (`/`)** — cross-vehicle list/overview, filtering by vehicle and/or service type.
-9. **Polish & static build** — empty states, basic styling, `vite build`, verify the static bundle runs from a plain file host.
-
----
-
-## 9. Deferred / Open Decisions
+## 8. Deferred / Open Decisions
 
 - **Backend stack** — not chosen. When cross-device data becomes a real limitation, implement `HttpServiceRepository` against the interface in §7 and mirror the Zod schemas server-side. Candidate stacks to evaluate *at that time*: Hono + SQLite, Fastify + Postgres, or a BaaS (Supabase / PocketBase). No decision needed now; nothing in this spec forecloses any of them.
 - **Data export/import** — not specified. Consider a JSON export as a low-effort backup/migration aid before the backend exists (optional, not required for v1).
