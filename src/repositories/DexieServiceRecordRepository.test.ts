@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DipStickDB } from './db';
 import { DexieServiceRecordRepository } from './DexieServiceRecordRepository';
+import { DexieReceiptRepository } from './DexieReceiptRepository';
 import type { NewServiceRecord } from '../domain/serviceRecord';
 
 let db: DipStickDB;
@@ -110,5 +111,25 @@ describe('DexieServiceRecordRepository', () => {
     await repo.delete(record.id);
 
     await expect(repo.get(record.id)).resolves.toBeUndefined();
+  });
+
+  it('delete_recordWithReceipts_cascadesDeleteToItsReceiptsOnly', async () => {
+    const receiptRepo = new DexieReceiptRepository(db);
+    const record = await repo.add(validOilChange);
+    const otherRecord = await repo.add(validTireRotation);
+    const ownReceipt = await receiptRepo.add(
+      new File(['a'], 'a.png', { type: 'image/png' }),
+      record.id,
+    );
+    const otherReceipt = await receiptRepo.add(
+      new File(['b'], 'b.png', { type: 'image/png' }),
+      otherRecord.id,
+    );
+
+    await repo.delete(record.id);
+
+    await expect(receiptRepo.getByServiceRecord(record.id)).resolves.toEqual([]);
+    await expect(receiptRepo.getByServiceRecord(otherRecord.id)).resolves.toEqual([otherReceipt]);
+    expect(ownReceipt.serviceRecordId).toBe(record.id);
   });
 });

@@ -99,4 +99,37 @@ describe('useServiceRecords', () => {
     await expect(add(invalid)).rejects.toThrow();
     expect(records.value).toHaveLength(0);
   });
+
+  it('add_invalidDetailsForType_setsError', async () => {
+    const { error, add } = useServiceRecords();
+
+    const invalid = {
+      vehicleId: vehicleAId,
+      date: '2026-07-01',
+      odometer: 1000,
+      type: 'oil_change',
+      details: { oilViscosity: 'bogus' },
+    } as unknown as NewServiceRecord;
+
+    await expect(add(invalid)).rejects.toThrow();
+
+    expect(error.value).not.toBeNull();
+  });
+
+  it('add_afterPriorFailure_clearsError', async () => {
+    const { error, add } = useServiceRecords();
+    const invalid = {
+      vehicleId: vehicleAId,
+      date: '2026-07-01',
+      odometer: 1000,
+      type: 'oil_change',
+      details: { oilViscosity: 'bogus' },
+    } as unknown as NewServiceRecord;
+    await expect(add(invalid)).rejects.toThrow();
+    expect(error.value).not.toBeNull();
+
+    await add(tireRotationFor(vehicleAId, 1000));
+
+    expect(error.value).toBeNull();
+  });
 });

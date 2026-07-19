@@ -49,7 +49,10 @@ export class DexieServiceRecordRepository implements ServiceRecordRepository {
   }
 
   async delete(id: string): Promise<void> {
-    // TODO(step 6.5): cascade-delete this record's receipts once the receipts table exists.
-    await this.db.serviceRecords.delete(id);
+    await this.db.transaction('rw', this.db.serviceRecords, this.db.receipts, async () => {
+      const receiptIds = await this.db.receipts.where('serviceRecordId').equals(id).primaryKeys();
+      await this.db.receipts.bulkDelete(receiptIds);
+      await this.db.serviceRecords.delete(id);
+    });
   }
 }
