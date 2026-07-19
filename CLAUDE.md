@@ -90,7 +90,7 @@ If a task seems to need a new dependency, propose it and explain why a hand-roll
 ## MAINTENANCE WORKFLOW
 - After completing a task or PR, review this CLAUDE.md file.
 - If you notice repetitive mistakes, refactors, new dependencies or new architectural standards, update this file immediately to reflect them.
-- Keep this file concise (under 200 lines) to avoid context bloat.
+- Keep this file concise (under 300 lines) to avoid context bloat.
 
 ## Architecture (the constraint that matters most)
 
