@@ -72,4 +72,15 @@ describe('useReceipts', () => {
     expect(revokeSpy).toHaveBeenCalledWith(url);
     revokeSpy.mockRestore();
   });
+
+  it('getCountsByServiceRecords_multipleRecords_returnsPerRecordCounts', async () => {
+    const { getCountsByServiceRecords, add } = useReceipts();
+    await add(makeFile(), recordAId);
+    await add(makeFile(), recordAId);
+    await add(makeFile(), recordBId);
+
+    const counts = await getCountsByServiceRecords([recordAId, recordBId, 'record-with-none']);
+
+    expect(counts).toEqual({ [recordAId]: 2, [recordBId]: 1, 'record-with-none': 0 });
+  });
 });

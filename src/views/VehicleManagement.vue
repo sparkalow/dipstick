@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useVehicles } from '../composables/useVehicles';
 import VehicleFormModal from '../components/VehicleFormModal.vue';
 import type { Vehicle } from '../domain/vehicle';
@@ -50,7 +51,7 @@ async function deleteVehicle(vehicle: Vehicle) {
     <ul v-else class="vehicle-list">
       <li v-for="vehicle in vehicles" :key="vehicle.id" class="vehicle-row">
         <div>
-          <strong>{{ vehicle.name }}</strong>
+          <RouterLink :to="`/vehicles/${vehicle.id}`" class="vehicle-name">{{ vehicle.name }}</RouterLink>
           <span class="vehicle-meta">
             {{ [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') }}
           </span>
@@ -94,6 +95,16 @@ async function deleteVehicle(vehicle: Vehicle) {
   border: 1px solid var(--color-border);
   border-radius: var(--space-1);
   background: var(--color-surface);
+}
+
+.vehicle-name {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vehicle-name:hover {
+  text-decoration: underline;
 }
 
 .vehicle-meta {

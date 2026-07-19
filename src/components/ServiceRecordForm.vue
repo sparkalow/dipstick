@@ -8,6 +8,9 @@ import type { NewServiceRecord, ServiceRecord } from '../domain/serviceRecord';
 const props = defineProps<{
   vehicleId: string;
   record?: ServiceRecord | null;
+  // Pre-fills the odometer field when adding a new record; ignored when editing
+  // (the record's own odometer wins).
+  currentOdometer?: number;
 }>();
 
 const emit = defineEmits<{
@@ -28,7 +31,7 @@ const serviceTypeKeys = Object.keys(serviceTypes) as ServiceTypeKey[];
 
 const type = ref<ServiceTypeKey>(props.record?.type ?? serviceTypeKeys[0]);
 const date = ref(props.record?.date ?? '');
-const odometer = ref<number | undefined>(props.record?.odometer);
+const odometer = ref<number | undefined>(props.record?.odometer ?? props.currentOdometer);
 const cost = ref<number | undefined>(props.record?.cost);
 const notes = ref(props.record?.notes ?? '');
 

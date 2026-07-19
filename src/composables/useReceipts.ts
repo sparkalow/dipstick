@@ -56,6 +56,16 @@ async function remove(id: string): Promise<void> {
   }
 }
 
+// Read-only bulk lookup for list views (e.g. a receipt-count badge per record) —
+// deliberately bypasses the scoped `receipts`/`loading` state above, which only
+// ever tracks one service record at a time.
+async function getCountsByServiceRecords(serviceRecordIds: string[]): Promise<Record<string, number>> {
+  const entries = await Promise.all(
+    serviceRecordIds.map(async (id) => [id, (await receiptRepository.getByServiceRecord(id)).length] as const),
+  );
+  return Object.fromEntries(entries);
+}
+
 async function getObjectUrl(id: string): Promise<string> {
   const cached = objectUrls.get(id);
   if (cached) return cached;
@@ -88,5 +98,16 @@ export function useReceipts() {
     onUnmounted(revokeAll);
   }
 
-  return { receipts, loading, error, loadByServiceRecord, add, remove, getObjectUrl, revoke, revokeAll };
+  return {
+    receipts,
+    loading,
+    error,
+    loadByServiceRecord,
+    add,
+    remove,
+    getObjectUrl,
+    getCountsByServiceRecords,
+    revoke,
+    revokeAll,
+  };
 }
