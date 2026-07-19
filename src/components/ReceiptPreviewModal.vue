@@ -37,7 +37,7 @@ watch(
       <h2>Receipts</h2>
 
       <p v-if="loading">Loading…</p>
-      <p v-else-if="receipts.length === 0">No receipts.</p>
+      <p v-else-if="receipts.length === 0" class="empty-state">No receipts.</p>
       <ul v-else class="preview-list">
         <li v-for="receipt in receipts" :key="receipt.id" class="preview-item">
           <a

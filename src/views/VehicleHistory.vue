@@ -86,7 +86,7 @@ function closePreview() {
 
     <p v-if="error" class="page-error">{{ error }}</p>
     <p v-if="recordsLoading">Loading…</p>
-    <p v-else-if="sortedRecords.length === 0">No service records yet.</p>
+    <p v-else-if="sortedRecords.length === 0" class="empty-state">No service records yet. Log the first one.</p>
 
     <ul v-else class="record-list">
       <li v-for="record in sortedRecords" :key="record.id" class="record-row">

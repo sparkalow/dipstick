@@ -46,7 +46,7 @@ async function deleteVehicle(vehicle: Vehicle) {
 
     <p v-if="error" class="page-error">{{ error }}</p>
     <p v-if="loading">Loading…</p>
-    <p v-else-if="vehicles.length === 0">No vehicles yet.</p>
+    <p v-else-if="vehicles.length === 0" class="empty-state">No vehicles yet. Add one to get started.</p>
 
     <ul v-else class="vehicle-list">
       <li v-for="vehicle in vehicles" :key="vehicle.id" class="vehicle-row">

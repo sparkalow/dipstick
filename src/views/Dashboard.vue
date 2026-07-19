@@ -58,7 +58,7 @@ const loading = computed(() => vehiclesLoading.value || recordsLoading.value);
 
     <p v-if="error" class="page-error">{{ error }}</p>
     <p v-if="loading">Loading…</p>
-    <p v-else-if="filteredRecords.length === 0">No service records match.</p>
+    <p v-else-if="filteredRecords.length === 0" class="empty-state">No service records match.</p>
 
     <ul v-else class="record-list">
       <li v-for="record in filteredRecords" :key="record.id" class="record-row">
