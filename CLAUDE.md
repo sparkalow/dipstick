@@ -1,11 +1,16 @@
 ## Project status
 
-Step 1 (project scaffold) is done: Vite + Vue 3 + TypeScript + `vue-router`, three stub routes (`/`, `/vehicles`, `/vehicles/:id`), no ESLint/Prettier yet (not added — not requested for this step). No domain code, repositories, or Dexie/Zod usage yet — that starts at Step 2.
+Step 1 (project scaffold) is done: Vite + Vue 3 + TypeScript + `vue-router`, three stub routes (`/`, `/vehicles`, `/vehicles/:id`), no ESLint/Prettier yet (not added — not requested for this step).
+
+Step 2 (domain types + service-type config) is done: `src/domain/vehicle.ts` (`Vehicle`, `NewVehicle`), `src/domain/serviceTypes.ts` (`InputType`, `FieldConfig`, `ServiceTypeConfig`, the `oil_change`/`tire_rotation` seed configs, and the `ServiceDetails` union derived via `z.infer`), `src/domain/serviceRecord.ts` (`ServiceRecord`, `NewServiceRecord`). Unit-tested with Vitest (`src/domain/serviceTypes.test.ts`). No repositories or Dexie usage yet — that starts at Step 3.
+
+`vitest` was added as a devDependency (not in the original approved-dependency list, which covers runtime deps) — it's the test runner for pure-TS unit tests like the Step 2 schema tests; `npm test` runs it.
 
 Commands:
 - `npm run dev` — dev server
 - `npm run build` — type-check (`vue-tsc -b`) + production build to `dist/`
 - `npm run preview` — serve the production build locally
+- `npm test` — run unit tests (Vitest)
 
 `vite` is on `^8` (rolldown-based bundler, the `create-vite` default). Node was upgraded to `v26.5.0` via nvm (pinned in `.nvmrc`, satisfies Vite's `^20.19.0 || >=22.12.0` requirement — no more `EBADENGINE` warning) and the project `.npmrc` sets `min-release-age=3` (looser than the machine's global `min-release-age=7`), which was needed the first time around: Vite 8's native rolldown binding for this platform (`@rolldown/binding-linux-x64-gnu`) is republished in lockstep with each rolldown release, so a fresh one is often only a few days old and can trip a strict release-age policy — that's what broke the initial install (see git history for the Vite 7 workaround this replaced).
 
