@@ -61,6 +61,12 @@ disallowed dependencies:
 
 If a task seems to need a new dependency, propose it and explain why a hand-rolled version is insufficient.
 
+## Testing Philosophy & Quality Standards
+- **No Trivial Tests**: Never write tests for basic language features, pure getters/setters, or auto-generated code.
+- **Test Intent, Not Implementation**: Focus on business/app logic, edge cases, and behavior rather than 100% line coverage.
+- **Assert Real Outcomes**: Every test must have a meaningful assertion. Avoid empty tests or tests that only check if a method "was called" without verifying the result.
+- **No Mocking Internal Logic**: Only mock external dependencies (APIs, databases). Do not mock the system under test or its internal helper methods.
+- **Readable Assertions**: Use descriptive test names following the `Method_Scenario_ExpectedResult` pattern.
 
 ## Coding conventions
 
