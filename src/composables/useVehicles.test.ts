@@ -73,4 +73,22 @@ describe('useVehicles', () => {
 
     expect(second.vehicles.value).toHaveLength(1);
   });
+
+  it('update_unknownId_setsErrorAndRejects', async () => {
+    const { error, update } = useVehicles();
+
+    await expect(update('does-not-exist', { name: 'x' })).rejects.toThrow();
+
+    expect(error.value).not.toBeNull();
+  });
+
+  it('add_afterPriorFailure_clearsError', async () => {
+    const { error, add, update } = useVehicles();
+    await expect(update('does-not-exist', { name: 'x' })).rejects.toThrow();
+    expect(error.value).not.toBeNull();
+
+    await add(newVehicle);
+
+    expect(error.value).toBeNull();
+  });
 });

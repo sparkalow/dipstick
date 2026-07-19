@@ -4,6 +4,11 @@ import type { NewVehicle, Vehicle } from '../domain/vehicle';
 
 const vehicles = ref<Vehicle[]>([]);
 const loading = ref(false);
+const error = ref<string | null>(null);
+
+function toErrorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
 
 async function refresh(): Promise<void> {
   loading.value = true;
@@ -15,22 +20,40 @@ async function refresh(): Promise<void> {
 }
 
 async function add(input: NewVehicle): Promise<Vehicle> {
-  const vehicle = await vehicleRepository.add(input);
-  await refresh();
-  return vehicle;
+  error.value = null;
+  try {
+    const vehicle = await vehicleRepository.add(input);
+    await refresh();
+    return vehicle;
+  } catch (e) {
+    error.value = toErrorMessage(e);
+    throw e;
+  }
 }
 
 async function update(id: string, patch: Partial<Vehicle>): Promise<Vehicle> {
-  const vehicle = await vehicleRepository.update(id, patch);
-  await refresh();
-  return vehicle;
+  error.value = null;
+  try {
+    const vehicle = await vehicleRepository.update(id, patch);
+    await refresh();
+    return vehicle;
+  } catch (e) {
+    error.value = toErrorMessage(e);
+    throw e;
+  }
 }
 
 async function remove(id: string): Promise<void> {
-  await vehicleRepository.delete(id);
-  await refresh();
+  error.value = null;
+  try {
+    await vehicleRepository.delete(id);
+    await refresh();
+  } catch (e) {
+    error.value = toErrorMessage(e);
+    throw e;
+  }
 }
 
 export function useVehicles() {
-  return { vehicles, loading, refresh, add, update, remove };
+  return { vehicles, loading, error, refresh, add, update, remove };
 }
