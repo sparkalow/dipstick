@@ -1,6 +1,13 @@
 ## Project status
 
-This repository currently contains only the implementation spec (`vehicle-maintenance-tracker-spec.md`) — no code has been scaffolded yet. There is no `package.json`, no build tooling, and no source tree. Until Step 1 of the build order below has been run, there are no build/lint/test commands to document. When scaffolding is done, update this file with the actual commands (`npm run dev`, `npm run build`, `npm run lint`, `npm run test -- <path>`, etc.) rather than assuming Vite/ESLint/Prettier defaults.
+Step 1 (project scaffold) is done: Vite + Vue 3 + TypeScript + `vue-router`, three stub routes (`/`, `/vehicles`, `/vehicles/:id`), no ESLint/Prettier yet (not added — not requested for this step). No domain code, repositories, or Dexie/Zod usage yet — that starts at Step 2.
+
+Commands:
+- `npm run dev` — dev server
+- `npm run build` — type-check (`vue-tsc -b`) + production build to `dist/`
+- `npm run preview` — serve the production build locally
+
+`vite` is on `^8` (rolldown-based bundler, the `create-vite` default). Node was upgraded to `v26.5.0` via nvm (pinned in `.nvmrc`, satisfies Vite's `^20.19.0 || >=22.12.0` requirement — no more `EBADENGINE` warning) and the project `.npmrc` sets `min-release-age=3` (looser than the machine's global `min-release-age=7`), which was needed the first time around: Vite 8's native rolldown binding for this platform (`@rolldown/binding-linux-x64-gnu`) is republished in lockstep with each rolldown release, so a fresh one is often only a few days old and can trip a strict release-age policy — that's what broke the initial install (see git history for the Vite 7 workaround this replaced).
 
 The full spec is in `vehicle-maintenance-tracker-spec.md` — read it before starting any step. What follows is a condensed reference of the parts most load-bearing for implementation decisions.
 

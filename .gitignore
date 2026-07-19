@@ -2,3 +2,6 @@
 node_modules
 tmp
 prompts
+dist
+dist-ssr
+*.local
