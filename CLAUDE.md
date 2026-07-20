@@ -50,6 +50,7 @@ approved dependencies:
 - dexie
 - vitest
 - fake-indexeddb
+- @fontsource/space-grotesk, @fontsource/inter, @fontsource/jetbrains-mono (self-hosted brand fonts, imported in `src/main.ts`; offline-safe, no external runtime dependency)
 
 disallowed dependencies:
 - axios

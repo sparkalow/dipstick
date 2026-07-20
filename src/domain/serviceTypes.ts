@@ -16,6 +16,9 @@ export interface ServiceTypeConfig<T extends z.ZodTypeAny = z.ZodTypeAny> {
   label: string;
   detailsSchema: T;
   fields: FieldConfig[];
+  // When true, this type's badge renders in the accent color instead of the
+  // subtle surface fill — purely presentational, drives the `.badge--accent` class.
+  accentBadge?: boolean;
 }
 
 const oilChangeDetailsSchema = z.object({
@@ -29,6 +32,7 @@ const oilChange: ServiceTypeConfig<typeof oilChangeDetailsSchema> = {
   key: 'oil_change',
   label: 'Oil Change',
   detailsSchema: oilChangeDetailsSchema,
+  accentBadge: true,
   fields: [
     {
       key: 'oilViscosity',

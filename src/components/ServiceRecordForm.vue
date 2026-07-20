@@ -2,11 +2,14 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useServiceRecords } from '../composables/useServiceRecords';
 import { useReceipts } from '../composables/useReceipts';
+import { useVehicles } from '../composables/useVehicles';
 import { serviceTypes, type ServiceTypeKey } from '../domain/serviceTypes';
 import type { NewServiceRecord, ServiceRecord } from '../domain/serviceRecord';
 
 const props = defineProps<{
-  vehicleId: string;
+  // Fixed vehicle context (from a vehicle's history). When omitted (global "Log
+  // Service"), the drawer shows a vehicle picker instead.
+  vehicleId?: string;
   record?: ServiceRecord | null;
   // Pre-fills the odometer field when adding a new record; ignored when editing
   // (the record's own odometer wins).
@@ -18,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { add, update, error } = useServiceRecords();
+const { vehicles, refresh: refreshVehicles } = useVehicles();
 const {
   receipts: existingReceipts,
   error: receiptsError,
@@ -28,6 +32,12 @@ const {
 } = useReceipts();
 
 const serviceTypeKeys = Object.keys(serviceTypes) as ServiceTypeKey[];
+
+// Vehicle: fixed when launched from a history page, chosen otherwise.
+const fixedVehicle = computed(() => props.record?.vehicleId ?? props.vehicleId);
+const selectedVehicleId = ref<string>(fixedVehicle.value ?? '');
+const vehicleLocked = computed(() => fixedVehicle.value !== undefined);
+const selectedVehicle = computed(() => vehicles.value.find((v) => v.id === selectedVehicleId.value));
 
 const type = ref<ServiceTypeKey>(props.record?.type ?? serviceTypeKeys[0]);
 const date = ref(props.record?.date ?? '');
@@ -65,6 +75,8 @@ const pendingFiles = ref<PendingFile[]>([]);
 const existingPreviewUrls = reactive<Record<string, string>>({});
 
 onMounted(() => {
+  // Populate the picker when there's no fixed vehicle.
+  if (!vehicleLocked.value && vehicles.value.length === 0) refreshVehicles();
   if (props.record) {
     loadByServiceRecord(props.record.id);
   }
@@ -134,6 +146,11 @@ function buildDetails(): Record<string, unknown> {
 async function submit() {
   validationError.value = null;
 
+  if (!selectedVehicleId.value) {
+    validationError.value = 'Vehicle is required.';
+    return;
+  }
+
   if (!date.value) {
     validationError.value = 'Date is required.';
     return;
@@ -157,7 +174,7 @@ async function submit() {
   }
 
   const input = {
-    vehicleId: props.vehicleId,
+    vehicleId: selectedVehicleId.value,
     date: date.value,
     odometer: odometerValue,
     cost: toNumberOrUndefined(cost.value),
@@ -174,7 +191,7 @@ async function submit() {
     }
     emit('close');
   } catch {
-    // error/receiptsError refs already hold the message; keep the modal open so the user can retry.
+    // error/receiptsError refs already hold the message; keep the drawer open so the user can retry.
   } finally {
     saving.value = false;
   }
@@ -182,43 +199,60 @@ async function submit() {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="emit('close')">
-    <div class="modal" role="dialog" aria-modal="true">
-      <h2>{{ record ? 'Edit service record' : 'Add service record' }}</h2>
+  <div class="drawer-overlay" @click.self="emit('close')">
+    <div class="drawer" role="dialog" aria-modal="true">
+      <div class="drawer-head">
+        <h2>{{ record ? 'Edit Service' : 'Log Service' }}</h2>
+        <button type="button" class="btn--ghost close-btn" aria-label="Close" @click="emit('close')">&times;</button>
+      </div>
 
-      <form @submit.prevent="submit">
+      <form class="drawer-form" @submit.prevent="submit">
         <label class="field">
-          <span>Service Type *</span>
-          <select v-model="type" required>
-            <option v-for="key in serviceTypeKeys" :key="key" :value="key">
-              {{ serviceTypes[key].label }}
-            </option>
+          <span class="field-label">Vehicle</span>
+          <div v-if="vehicleLocked" class="field-static">{{ selectedVehicle?.name ?? '—' }}</div>
+          <select v-else v-model="selectedVehicleId" required>
+            <option value="" disabled>Select a vehicle…</option>
+            <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.name }}</option>
           </select>
         </label>
 
-        <label class="field">
-          <span>Date *</span>
-          <input v-model="date" type="date" required />
-        </label>
+        <div class="field">
+          <span class="field-label">Service type</span>
+          <div class="type-toggle">
+            <button
+              v-for="key in serviceTypeKeys"
+              :key="key"
+              type="button"
+              class="type-option"
+              :class="{ 'type-option--active': type === key }"
+              @click="type = key"
+            >
+              {{ serviceTypes[key].label }}
+            </button>
+          </div>
+        </div>
 
-        <label class="field">
-          <span>Odometer *</span>
-          <input v-model.number="odometer" type="number" required />
-        </label>
-
-        <label class="field">
-          <span>Cost</span>
-          <input v-model.number="cost" type="number" step="0.01" />
-        </label>
-
-        <label class="field">
-          <span>Notes</span>
-          <textarea v-model="notes" rows="3"></textarea>
-        </label>
-
-        <template v-for="field in currentConfig.fields" :key="field.key">
+        <div class="field-row">
           <label class="field">
-            <span>{{ field.label }}{{ field.unit ? ` (${field.unit})` : '' }}{{ field.required ? ' *' : '' }}</span>
+            <span class="field-label">Date *</span>
+            <input v-model="date" type="date" required />
+          </label>
+          <label class="field">
+            <span class="field-label">Odometer *</span>
+            <input v-model.number="odometer" type="number" placeholder="0" required />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field-label">Cost</span>
+          <input v-model.number="cost" type="number" step="0.01" placeholder="0.00" />
+        </label>
+
+        <div v-if="currentConfig.fields.length > 0" class="details-panel">
+          <label v-for="field in currentConfig.fields" :key="field.key" class="field">
+            <span class="field-label">
+              {{ field.label }}{{ field.unit ? ` (${field.unit})` : '' }}{{ field.required ? ' *' : '' }}
+            </span>
             <select v-if="field.input === 'select'" v-model="detailsForm[field.key]" :required="field.required">
               <option value="" disabled>Select…</option>
               <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
@@ -237,10 +271,15 @@ async function submit() {
             />
             <input v-else v-model="detailsForm[field.key]" type="text" :required="field.required" />
           </label>
-        </template>
+        </div>
+
+        <label class="field">
+          <span class="field-label">Notes</span>
+          <textarea v-model="notes" rows="3" placeholder="Anything else worth remembering…"></textarea>
+        </label>
 
         <div class="field">
-          <span>Receipts</span>
+          <span class="field-label">Receipts</span>
 
           <ul v-if="existingReceipts.length > 0" class="receipt-list">
             <li v-for="receipt in existingReceipts" :key="receipt.id" class="receipt-item">
@@ -252,7 +291,7 @@ async function submit() {
               />
               <span v-else class="receipt-badge">{{ fileBadgeLabel(receipt.filename) }}</span>
               <span class="receipt-filename">{{ receipt.filename }}</span>
-              <button type="button" @click="removeExistingReceipt(receipt.id)">Remove</button>
+              <button type="button" class="btn--ghost btn--sm" @click="removeExistingReceipt(receipt.id)">Remove</button>
             </li>
           </ul>
 
@@ -271,20 +310,25 @@ async function submit() {
                   ({{ formatSize(pending.file.size) }} — large file)
                 </span>
               </span>
-              <button type="button" @click="removePendingFile(index)">Remove</button>
+              <button type="button" class="btn--ghost btn--sm" @click="removePendingFile(index)">Remove</button>
             </li>
           </ul>
 
-          <input type="file" accept="image/*,application/pdf" multiple @change="onFilesSelected" />
+          <label class="dropzone">
+            <span>Drop receipt photos or PDFs here, or click to browse</span>
+            <input type="file" accept="image/*,application/pdf" multiple @change="onFilesSelected" />
+          </label>
         </div>
 
         <p v-if="validationError" class="form-error">{{ validationError }}</p>
         <p v-if="error" class="form-error">{{ error }}</p>
         <p v-if="receiptsError" class="form-error">{{ receiptsError }}</p>
 
-        <div class="modal-actions">
-          <button type="button" @click="emit('close')">Cancel</button>
-          <button type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
+        <div class="drawer-actions">
+          <button type="button" class="btn--secondary drawer-btn" @click="emit('close')">Cancel</button>
+          <button type="submit" class="btn--primary drawer-btn" :disabled="saving">
+            {{ saving ? 'Saving…' : 'Save record' }}
+          </button>
         </div>
       </form>
     </div>
@@ -292,45 +336,123 @@ async function submit() {
 </template>
 
 <style scoped>
-.modal-overlay {
+.drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 40%);
+  background: rgb(32 48 69 / 55%);
+  z-index: 100;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
+  justify-content: flex-end;
 }
 
-.modal {
+.drawer {
+  width: 460px;
+  max-width: 100%;
+  height: 100%;
   background: var(--color-bg);
-  border-radius: var(--space-2);
-  padding: var(--space-4);
-  width: min(28rem, 100%);
-  max-height: 90vh;
+  box-shadow: var(--shadow-drawer);
+  padding: var(--space-5);
   overflow-y: auto;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.drawer-head h2 {
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  font-size: 1.5rem;
+  padding: 0 var(--space-2);
+  line-height: 1;
+}
+
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  min-width: 0; /* allow shrinking inside flex rows / grid tracks */
 }
 
 .field input,
 .field select,
 .field textarea {
-  padding: var(--space-2);
+  width: 100%;
+}
+
+.field-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-head);
+}
+
+.field-static {
+  font-size: 0.9375rem;
+  color: var(--color-head);
+  background: var(--color-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+}
+
+.field-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.type-toggle {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.type-option {
+  flex: 1;
+  background: var(--color-card);
+  color: var(--color-head);
+  border: 1.5px solid var(--color-border);
+}
+
+.type-option--active {
+  background: var(--color-nav);
+  color: var(--color-on-nav);
+  border-color: var(--color-nav);
+}
+
+.details-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--space-1);
-  font-family: inherit;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.details-panel .field input,
+.details-panel .field select {
+  background: var(--color-input-bg-alt);
 }
 
 .form-error {
-  color: #b3261e;
-  margin-bottom: var(--space-3);
+  color: var(--color-danger);
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .receipt-list {
@@ -352,7 +474,7 @@ async function submit() {
   width: 2.5rem;
   height: 2.5rem;
   object-fit: cover;
-  border-radius: var(--space-1);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
 
@@ -362,7 +484,7 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--space-1);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   font-size: 0.65rem;
@@ -378,12 +500,34 @@ async function submit() {
 }
 
 .receipt-warning {
-  color: var(--color-text-muted);
+  color: var(--color-body);
 }
 
-.modal-actions {
+.dropzone {
+  display: block;
+  border: 1.5px dashed var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-body);
+  font-size: 0.8125rem;
+  background: var(--color-card);
+  cursor: pointer;
+}
+
+.dropzone input[type='file'] {
+  display: block;
+  margin: var(--space-2) auto 0;
+  font-size: 0.75rem;
+}
+
+.drawer-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+.drawer-btn {
+  flex: 1;
+  padding: 0.75rem;
 }
 </style>

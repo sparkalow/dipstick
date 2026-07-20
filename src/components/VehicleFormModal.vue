@@ -60,7 +60,7 @@ async function submit() {
     <div class="modal" role="dialog" aria-modal="true">
       <h2>{{ vehicle ? 'Edit vehicle' : 'Add vehicle' }}</h2>
 
-      <form @submit.prevent="submit">
+      <form class="modal-form" @submit.prevent="submit">
         <label class="field">
           <span>Name *</span>
           <input v-model="name" type="text" required />
@@ -98,8 +98,8 @@ async function submit() {
         <p v-if="error" class="form-error">{{ error }}</p>
 
         <div class="modal-actions">
-          <button type="button" @click="emit('close')">Cancel</button>
-          <button type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
+          <button type="button" class="btn--secondary" @click="emit('close')">Cancel</button>
+          <button type="submit" class="btn--primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
         </div>
       </form>
     </div>
@@ -110,7 +110,8 @@ async function submit() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 40%);
+  background: rgb(32 48 69 / 55%);
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,37 +120,45 @@ async function submit() {
 
 .modal {
   background: var(--color-bg);
-  border-radius: var(--space-2);
-  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
   width: min(28rem, 100%);
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.modal h2 {
+  margin-bottom: var(--space-4);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
 }
 
-.field input,
-.field select {
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--space-1);
-  font-family: inherit;
-  font-size: 1rem;
+.field span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-head);
 }
 
 .form-error {
-  color: #b3261e;
-  margin-bottom: var(--space-3);
+  color: var(--color-danger);
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 </style>

@@ -34,9 +34,12 @@ watch(
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal" role="dialog" aria-modal="true">
-      <h2>Receipts</h2>
+      <div class="modal-head">
+        <h2>Receipts</h2>
+        <button type="button" class="btn--ghost close-btn" aria-label="Close" @click="emit('close')">&times;</button>
+      </div>
 
-      <p v-if="loading">Loading…</p>
+      <p v-if="loading" class="muted">Loading…</p>
       <p v-else-if="receipts.length === 0" class="empty-state">No receipts.</p>
       <ul v-else class="preview-list">
         <li v-for="receipt in receipts" :key="receipt.id" class="preview-item">
@@ -59,7 +62,7 @@ watch(
       </ul>
 
       <div class="modal-actions">
-        <button type="button" @click="emit('close')">Close</button>
+        <button type="button" class="btn--secondary" @click="emit('close')">Close</button>
       </div>
     </div>
   </div>
@@ -69,7 +72,8 @@ watch(
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 40%);
+  background: rgb(32 48 69 / 55%);
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,11 +82,28 @@ watch(
 
 .modal {
   background: var(--color-bg);
-  border-radius: var(--space-2);
-  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
   width: min(28rem, 100%);
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.close-btn {
+  font-size: 1.5rem;
+  padding: 0 var(--space-2);
+  line-height: 1;
+}
+
+.muted {
+  color: var(--color-body);
 }
 
 .preview-list {
@@ -102,7 +123,7 @@ watch(
   width: 6rem;
   height: 6rem;
   object-fit: cover;
-  border-radius: var(--space-1);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
 
@@ -112,7 +133,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--space-1);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   font-size: 0.75rem;

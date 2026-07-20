@@ -1,19 +1,48 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed, onMounted, ref } from 'vue';
+import { RouterLink, RouterView } from 'vue-router';
+import { useVehicles } from './composables/useVehicles';
+import ServiceRecordForm from './components/ServiceRecordForm.vue';
+
+const { vehicles, refresh } = useVehicles();
+
+onMounted(refresh);
+
+const showLog = ref(false);
+const hasVehicles = computed(() => vehicles.value.length > 0);
 </script>
 
 <template>
   <div class="app-shell">
-    <header class="app-header">
-      <span class="app-title">DipStick</span>
-      <nav class="app-nav">
-        <RouterLink to="/">Dashboard</RouterLink>
-        <RouterLink to="/vehicles">Vehicles</RouterLink>
+    <header class="app-nav">
+      <RouterLink to="/" class="brand">
+        <img src="/logo.png" alt="" class="brand-logo" />
+        <span class="brand-name">DipStick</span>
+      </RouterLink>
+
+      <nav class="nav-tabs">
+        <RouterLink to="/" class="nav-tab">Dashboard</RouterLink>
+        <RouterLink to="/vehicles" class="nav-tab">Vehicles</RouterLink>
       </nav>
+
+      <div class="nav-spacer"></div>
+
+      <button
+        type="button"
+        class="btn--primary log-btn"
+        :disabled="!hasVehicles"
+        :title="hasVehicles ? undefined : 'Add a vehicle first'"
+        @click="showLog = true"
+      >
+        <span class="log-plus">+</span> Log Service
+      </button>
     </header>
+
     <main class="app-main">
       <RouterView />
     </main>
+
+    <ServiceRecordForm v-if="showLog" @close="showLog = false" />
   </div>
 </template>
 
@@ -24,36 +53,81 @@ import { RouterLink, RouterView } from 'vue-router'
   min-height: 100vh;
 }
 
-.app-header {
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  height: 72px;
+  padding: 0 var(--space-5);
+  background: var(--color-nav);
 }
 
-.app-title {
-  font-weight: 600;
-}
-
-.app-nav {
+.brand {
   display: flex;
-  gap: var(--space-3);
-}
-
-.app-nav a {
-  color: var(--color-text-muted);
+  align-items: center;
+  gap: var(--space-2);
   text-decoration: none;
 }
 
-.app-nav a.router-link-active {
-  color: var(--color-accent);
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.brand-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.2px;
+  color: var(--color-on-nav);
+}
+
+.nav-tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: var(--space-3);
+}
+
+.nav-tab {
+  font-family: var(--font-head);
   font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-nav-muted);
+  text-decoration: none;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.nav-tab:hover {
+  color: var(--color-on-nav);
+}
+
+/* Dashboard ("/") is a prefix of every route, so only light it on an exact match;
+   Vehicles stays active across /vehicles and /vehicles/:id. */
+.nav-tab.router-link-exact-active,
+.nav-tab.router-link-active:not([href='/']) {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+.log-plus {
+  font-size: 1.125rem;
+  line-height: 1;
 }
 
 .app-main {
   flex: 1;
-  padding: var(--space-4);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-6);
 }
 </style>
