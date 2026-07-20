@@ -179,7 +179,7 @@ Add/edit a service record is a **modal/drawer, not a route** (keeps logging fast
 --floral-white: #fbf8f0;
 --deep-space-blue: #203045;
 ```
-## Typgraphy
+## Typography
 
 Headers: Space Grotesk
 Body Text: Inter
