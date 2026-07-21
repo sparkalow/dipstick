@@ -2,9 +2,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import { useVehicles } from './composables/useVehicles';
+import { useTheme } from './composables/useTheme';
 import ServiceRecordForm from './components/ServiceRecordForm.vue';
 
 const { vehicles, refresh } = useVehicles();
+const { theme, toggleTheme } = useTheme();
 
 onMounted(refresh);
 
@@ -26,6 +28,17 @@ const hasVehicles = computed(() => vehicles.value.length > 0);
       </nav>
 
       <div class="nav-spacer"></div>
+
+      <button
+        type="button"
+        class="theme-toggle"
+        :class="{ 'theme-toggle--on': theme === 'dark' }"
+        :aria-pressed="theme === 'dark'"
+        :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        @click="toggleTheme"
+      >
+        {{ theme === 'dark' ? '☾ Dark' : '☀ Light' }}
+      </button>
 
       <button
         type="button"
@@ -116,6 +129,29 @@ const hasVehicles = computed(() => vehicles.value.length > 0);
 
 .nav-spacer {
   flex: 1;
+}
+
+/* The nav bar is dark in both themes, so this toggle is styled against dark. */
+.theme-toggle {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1.5px solid var(--blue-slate);
+  color: var(--color-nav-muted);
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-nav-muted);
+  filter: none;
+}
+
+.theme-toggle--on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .log-plus {

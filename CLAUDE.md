@@ -186,6 +186,10 @@ Headers: Space Grotesk
 Body Text: Inter
 Stats/Data: JetBrains Mono
 
+## Theming
+
+Light + dark themes are driven entirely by semantic CSS custom properties in `src/style.css`: the `:root` block is light, a `:root[data-theme='dark']` block overrides only surfaces/borders/text (nav + accent tokens are shared). Components must reference the semantic tokens (`--color-card/head/body/...`), never raw brand hexes, so both themes stay correct. The active theme is an attribute on `<html>` set before first paint by an inline bootstrap in `index.html` (no flash) and managed via `useTheme` (persisted to `localStorage`, **default dark**).
+
 ## Deferred / explicitly out of scope
 
 Do not build these unless the user asks — they are deliberately deferred in the spec:
