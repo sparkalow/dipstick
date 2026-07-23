@@ -169,6 +169,7 @@ interface ReceiptRepository {
 | `/` | Dashboard / list | overview; cross-vehicle record list, filters by vehicle/type |
 | `/vehicles` | Vehicle management | vehicle CRUD |
 | `/vehicles/:id` | Vehicle history | that vehicle's service records |
+| `/vehicles/:id/report` | Maintenance report | printable single-vehicle service history (all records + receipts, warranty-grade); uses global `@media print` rules + `.no-print` in `style.css` |
 
 Add/edit a service record is a **modal/drawer, not a route** (keeps logging fast, preserves list scroll position). Add/edit a vehicle can be a modal within `/vehicles`.
 

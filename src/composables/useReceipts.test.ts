@@ -73,6 +73,19 @@ describe('useReceipts', () => {
     revokeSpy.mockRestore();
   });
 
+  it('getReceiptsByServiceRecords_multipleRecords_groupsReceiptsByRecordId', async () => {
+    const { getReceiptsByServiceRecords, add } = useReceipts();
+    await add(makeFile('a1.png'), recordAId);
+    await add(makeFile('a2.pdf', 'application/pdf'), recordAId);
+    await add(makeFile('b1.png'), recordBId);
+
+    const grouped = await getReceiptsByServiceRecords([recordAId, recordBId, 'record-with-none']);
+
+    expect(grouped[recordAId].map((r) => r.filename).sort()).toEqual(['a1.png', 'a2.pdf']);
+    expect(grouped[recordBId].map((r) => r.filename)).toEqual(['b1.png']);
+    expect(grouped['record-with-none']).toEqual([]);
+  });
+
   it('getCountsByServiceRecords_multipleRecords_returnsPerRecordCounts', async () => {
     const { getCountsByServiceRecords, add } = useReceipts();
     await add(makeFile(), recordAId);

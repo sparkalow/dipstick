@@ -66,6 +66,18 @@ async function getCountsByServiceRecords(serviceRecordIds: string[]): Promise<Re
   return Object.fromEntries(entries);
 }
 
+// Read-only bulk fetch grouping receipts by service record — for views that render
+// receipts across many records at once (e.g. the maintenance report). Like
+// getCountsByServiceRecords, it deliberately bypasses the scoped `receipts` state.
+async function getReceiptsByServiceRecords(
+  serviceRecordIds: string[],
+): Promise<Record<string, Receipt[]>> {
+  const entries = await Promise.all(
+    serviceRecordIds.map(async (id) => [id, await receiptRepository.getByServiceRecord(id)] as const),
+  );
+  return Object.fromEntries(entries);
+}
+
 async function getObjectUrl(id: string): Promise<string> {
   const cached = objectUrls.get(id);
   if (cached) return cached;
@@ -107,6 +119,7 @@ export function useReceipts() {
     remove,
     getObjectUrl,
     getCountsByServiceRecords,
+    getReceiptsByServiceRecords,
     revoke,
     revokeAll,
   };

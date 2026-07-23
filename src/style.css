@@ -253,3 +253,18 @@ textarea {
   border-radius: var(--radius-lg);
   background: var(--color-card);
 }
+
+/* --- Print ----------------------------------------------------------------
+   For printable documents (the maintenance report): drop the app chrome so the
+   page content prints on its own, and hide anything tagged .no-print. */
+@media print {
+  .app-nav,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+}

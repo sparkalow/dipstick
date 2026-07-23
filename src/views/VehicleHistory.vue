@@ -132,7 +132,12 @@ function costLabel(cost: number | undefined): string {
           {{ chip.label }}
         </button>
       </div>
-      <button type="button" class="btn--primary btn--sm" @click="openAddForm">+ Log service</button>
+      <div class="toolbar-actions">
+        <RouterLink :to="`/vehicles/${vehicleId}/report`" class="btn btn--secondary btn--sm report-link">
+          Report
+        </RouterLink>
+        <button type="button" class="btn--primary btn--sm" @click="openAddForm">+ Log service</button>
+      </div>
     </div>
 
     <p v-if="error" class="page-error">{{ error }}</p>
@@ -254,6 +259,15 @@ function costLabel(cost: number | undefined): string {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.report-link {
+  text-decoration: none;
 }
 
 .filter-chip {
