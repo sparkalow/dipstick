@@ -72,6 +72,9 @@ If a task seems to need a new dependency, propose it and explain why.
 
 - **Vue 3 composition API** with `<script setup>`. No Options API.
 - **Plain CSS with custom properties.** No CSS-in-JS. No Tailwind.
+- **Static lookup lists live in `src/data/`** (e.g. `vehicleMakes.ts`) — suggestion data only, never validated against, so custom values stay allowed.
+- **Non-trivial component logic goes in a plain `.ts` sibling** (e.g. `components/typeahead.ts` next to `TypeaheadInput.vue`) so it's unit-testable — there's no component-test harness (`@vue/test-utils` is not an approved dependency).
+- `TypeaheadInput.vue` is the shared combobox: `v-model` + `:options`, free-text by default with a "Use …" row for unlisted values (`:allow-custom="false"` restricts it to the list).
 
 ## MAINTENANCE WORKFLOW
 - After completing a task or PR, review this CLAUDE.md file.

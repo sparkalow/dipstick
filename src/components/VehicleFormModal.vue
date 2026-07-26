@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useVehicles } from '../composables/useVehicles';
+import TypeaheadInput from './TypeaheadInput.vue';
+import { vehicleMakes } from '../data/vehicleMakes';
 import type { OdometerUnit, Vehicle } from '../domain/vehicle';
 
 const props = defineProps<{
@@ -66,10 +68,15 @@ async function submit() {
           <input v-model="name" type="text" required />
         </label>
 
-        <label class="field">
-          <span>Make</span>
-          <input v-model="make" type="text" />
-        </label>
+        <div class="field">
+          <label for="vehicle-make"><span>Make</span></label>
+          <TypeaheadInput
+            v-model="make"
+            input-id="vehicle-make"
+            :options="vehicleMakes"
+            placeholder="Search or type a make"
+          />
+        </div>
 
         <label class="field">
           <span>Model</span>
