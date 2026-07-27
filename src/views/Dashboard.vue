@@ -99,6 +99,7 @@ function goToVehicle(id: string) {
           class="vehicle-chip"
           @click="goToVehicle(vehicle.id)"
         >
+          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
           <span class="chip-name">{{ vehicle.name }}</span>
           <span class="chip-odo mono">{{ odometerLabel(vehicle.id) }}</span>
         </button>

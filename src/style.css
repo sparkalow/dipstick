@@ -51,6 +51,8 @@
 
   --shadow-drawer: -8px 0 30px rgb(32 48 69 / 20%);
   --shadow-card: 0 1px 2px rgb(32 48 69 / 4%);
+
+  --icon-fill: #fff;
 }
 
 /* Dark theme. The nav/hero surfaces (--color-nav) and the accent + on-* tokens are
@@ -71,6 +73,12 @@
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 25%);
   --shadow-drawer: -8px 0 30px rgb(0 0 0 / 45%);
+
+  --icon-fill: var(--color-bg);
+
+  .icon-make{
+    filter: invert(1);
+  }
 }
 
 * {
@@ -252,6 +260,15 @@ textarea {
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-card);
+}
+
+/* --- Shared card / empty state -------------------------------------------- */
+.icon-make{
+  display: inline-block;
+  aspect-ratio: 1;
+  width: 30px;
+  color: var(--icon-fill);
+  fill: currentColor;
 }
 
 /* --- Print ----------------------------------------------------------------

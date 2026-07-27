@@ -50,7 +50,8 @@ async function deleteVehicle(vehicle: Vehicle) {
 
     <ul v-else class="vehicle-list">
       <li v-for="vehicle in vehicles" :key="vehicle.id" class="vehicle-row card">
-        <div>
+        <div class="vechicle-info">
+          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
           <RouterLink :to="`/vehicles/${vehicle.id}`" class="vehicle-name">{{ vehicle.name }}</RouterLink>
           <span class="vehicle-meta">
             {{ [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') }}
@@ -105,7 +106,11 @@ async function deleteVehicle(vehicle: Vehicle) {
   color: var(--color-head);
   text-decoration: none;
 }
-
+.vechicle-info{
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .vehicle-name:hover {
   text-decoration: underline;
 }
