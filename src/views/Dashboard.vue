@@ -61,50 +61,7 @@ function goToVehicle(id: string) {
 
 <template>
   <div>
-    <header class="page-head">
-      <h1>Garage</h1>
-      <p class="page-sub">
-        {{ stats.vehicleCount }} {{ stats.vehicleCount === 1 ? 'vehicle' : 'vehicles' }} ·
-        {{ records.length }} {{ records.length === 1 ? 'record' : 'records' }} logged
-      </p>
-    </header>
-
     <p v-if="error" class="page-error">{{ error }}</p>
-
-    <section class="stat-grid">
-      <div class="stat card">
-        <div class="stat-label">Vehicles tracked</div>
-        <div class="stat-value mono">{{ stats.vehicleCount }}</div>
-      </div>
-      <div class="stat card">
-        <div class="stat-label">Records in {{ currentYear }}</div>
-        <div class="stat-value mono">{{ stats.recordsThisYear }}</div>
-      </div>
-      <div class="stat card">
-        <div class="stat-label">Total logged spend</div>
-        <div class="stat-value mono">{{ currencyFmt.format(stats.totalSpend) }}</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>Your vehicles</h2>
-      <p v-if="!loading && vehicles.length === 0" class="empty-state">
-        No vehicles yet. Add one from the Vehicles page to get started.
-      </p>
-      <div v-else class="chip-row">
-        <button
-          v-for="vehicle in vehicles"
-          :key="vehicle.id"
-          type="button"
-          class="vehicle-chip"
-          @click="goToVehicle(vehicle.id)"
-        >
-          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
-          <span class="chip-name">{{ vehicle.name }}</span>
-          <span class="chip-odo mono">{{ odometerLabel(vehicle.id) }}</span>
-        </button>
-      </div>
-    </section>
 
     <section class="section">
       <div class="section-head">
@@ -148,6 +105,47 @@ function goToVehicle(id: string) {
         </li>
       </ul>
     </section>
+
+    <section class="section">
+      <h2>Your vehicles</h2>
+      <p v-if="!loading && vehicles.length === 0" class="empty-state">
+        No vehicles yet. Add one from the Vehicles page to get started.
+      </p>
+      <div v-else class="chip-row">
+        <button
+            v-for="vehicle in vehicles"
+            :key="vehicle.id"
+            type="button"
+            class="vehicle-chip"
+            @click="goToVehicle(vehicle.id)"
+        >
+          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
+          <span class="chip-name">{{ vehicle.name }}</span>
+          <span class="chip-odo mono">{{ odometerLabel(vehicle.id) }}</span>
+        </button>
+      </div>
+    </section>
+
+      <p class="page-sub">
+        {{ stats.vehicleCount }} {{ stats.vehicleCount === 1 ? 'vehicle' : 'vehicles' }} ·
+        {{ records.length }} {{ records.length === 1 ? 'record' : 'records' }} logged
+      </p>
+
+    <section class="stat-grid">
+      <div class="stat card">
+        <div class="stat-label">Vehicles tracked</div>
+        <div class="stat-value mono">{{ stats.vehicleCount }}</div>
+      </div>
+      <div class="stat card">
+        <div class="stat-label">Records in {{ currentYear }}</div>
+        <div class="stat-value mono">{{ stats.recordsThisYear }}</div>
+      </div>
+      <div class="stat card">
+        <div class="stat-label">Total logged spend</div>
+        <div class="stat-value mono">{{ currencyFmt.format(stats.totalSpend) }}</div>
+      </div>
+    </section>
+
   </div>
 </template>
 
