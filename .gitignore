@@ -6,3 +6,4 @@ dist
 dist-ssr
 *.local
 visual-design
+.claude/settings.local.json
