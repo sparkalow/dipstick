@@ -176,20 +176,6 @@ interface ReceiptRepository {
 
 Add/edit a service record is a **modal/drawer, not a route** (keeps logging fast, preserves list scroll position). Add/edit a vehicle can be a modal within `/vehicles`.
 
-## Color palette
-```css
---blue-slate: #576068;
---pearl-beige: #e9deba;
---golden-bronze: #ce9e36;
---floral-white: #fbf8f0;
---deep-space-blue: #203045;
-```
-## Typography
-
-Headers: Space Grotesk
-Body Text: Inter
-Stats/Data: JetBrains Mono
-
 ## Theming
 
 Light + dark themes are driven entirely by semantic CSS custom properties in `src/style.css`: the `:root` block is light, a `:root[data-theme='dark']` block overrides only surfaces/borders/text (nav + accent tokens are shared). Components must reference the semantic tokens (`--color-card/head/body/...`), never raw brand hexes, so both themes stay correct. The active theme is an attribute on `<html>` set before first paint by an inline bootstrap in `index.html` (no flash) and managed via `useTheme` (persisted to `localStorage`, **default dark**).

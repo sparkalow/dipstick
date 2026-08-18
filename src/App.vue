@@ -146,7 +146,7 @@ const hasVehicles = computed(() => vehicles.value.length > 0);
   padding: 0.5rem 1rem;
   border-radius: var(--radius-pill);
   background: transparent;
-  border: 1.5px solid var(--blue-slate);
+  border: 1.5px solid color-mix(in srgb, var(--color-nav-muted) 35%, transparent);
   color: var(--color-nav-muted);
 }
 

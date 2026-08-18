@@ -339,7 +339,7 @@ async function submit() {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(32 48 69 / 55%);
+  background: var(--color-scrim);
   z-index: 100;
   display: flex;
   justify-content: flex-end;

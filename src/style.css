@@ -1,31 +1,34 @@
 :root {
-  /* Brand palette (see CLAUDE.md's "Color palette" section) */
-  --blue-slate: #576068;
-  --pearl-beige: #e9deba;
-  --golden-bronze: #ce9e36;
-  --floral-white: #fbf8f0;
-  --deep-space-blue: #203045;
+  /* Brand palette (see CLAUDE.md's "Theming" section). Names are deliberately
+     generic — the value, not the name, defines the scheme, so a palette swap is
+     a hex edit here and nothing else. */
+  --brand-color-1: #f0a830; /* amber — accent */
+  --brand-color-2: #cfc199; /* sand — surfaces, borders */
+  --brand-color-3: #6b5a2c; /* olive-bronze — body copy */
+  --brand-white: #fbf8f0;
+  --brand-black: #1f2426;
 
   /* Semantic tokens (mirrors the design comp's light theme).
      Structured as a single theme layer so a dark theme can be added later
      by overriding these values under a [data-theme] selector. */
-  --color-bg: var(--floral-white); /* page canvas */
+  --color-bg: var(--brand-white); /* page canvas */
   --color-card: #ffffff; /* card / panel fill */
-  --color-surface: var(--pearl-beige); /* tags, subtle fills, dividers */
-  --color-border: var(--pearl-beige);
-  --color-nav: var(--deep-space-blue); /* top bar, dark hero surfaces */
+  --color-surface: var(--brand-color-2); /* tags, subtle fills, dividers */
+  --color-border: var(--brand-color-2);
+  --color-nav: var(--brand-black); /* top bar, dark hero surfaces */
 
-  --color-head: var(--deep-space-blue); /* headings, primary text */
-  --color-body: var(--blue-slate); /* body copy, secondary text */
-  --color-accent: var(--golden-bronze); /* CTAs, highlights, active states */
+  --color-head: var(--brand-black); /* headings, primary text */
+  --color-body: var(--brand-color-3); /* body copy, secondary text */
+  --color-accent: var(--brand-color-1); /* CTAs, highlights, active states */
 
-  --color-on-accent: var(--deep-space-blue); /* text on an accent fill */
-  --color-on-nav: var(--floral-white); /* text on a dark surface */
-  --color-nav-muted: var(--pearl-beige); /* secondary text on dark */
+  --color-on-accent: var(--brand-black); /* text on an accent fill */
+  --color-on-nav: var(--brand-white); /* text on a dark surface */
+  --color-nav-muted: var(--brand-color-2); /* secondary text on dark */
 
   --color-input-bg: #ffffff;
-  --color-input-bg-alt: var(--floral-white);
+  --color-input-bg-alt: var(--brand-white);
   --color-danger: #b3423a;
+  --color-scrim: rgb(31 36 38 / 55%); /* modal backdrops — brand-black at 55% */
 
   /* Back-compat aliases used by not-yet-restyled views */
   --color-text: var(--color-head);
@@ -49,8 +52,8 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
   --font-family: var(--font-body); /* back-compat alias */
 
-  --shadow-drawer: -8px 0 30px rgb(32 48 69 / 20%);
-  --shadow-card: 0 1px 2px rgb(32 48 69 / 4%);
+  --shadow-drawer: -8px 0 30px rgb(31 36 38 / 20%);
+  --shadow-card: 0 1px 2px rgb(31 36 38 / 4%);
 
   --icon-fill: #fff;
 }
@@ -59,16 +62,16 @@
    intentionally shared with light — only page surfaces, borders, and text flip.
    Applied via [data-theme='dark'] on <html>; see index.html bootstrap + useTheme. */
 :root[data-theme='dark'] {
-  --color-bg: oklch(20% 0.03 255);
-  --color-card: oklch(26% 0.035 255);
-  --color-surface: oklch(31% 0.04 255);
-  --color-border: oklch(37% 0.045 255);
+  --color-bg: oklch(20% 0.006 205);
+  --color-card: oklch(26% 0.007 205);
+  --color-surface: oklch(31% 0.008 205);
+  --color-border: oklch(37% 0.009 205);
 
-  --color-head: var(--floral-white);
-  --color-body: oklch(80% 0.02 255);
+  --color-head: var(--brand-white);
+  --color-body: oklch(80% 0.012 205);
 
-  --color-input-bg: oklch(26% 0.035 255);
-  --color-input-bg-alt: oklch(22% 0.03 255);
+  --color-input-bg: oklch(26% 0.007 205);
+  --color-input-bg-alt: oklch(22% 0.006 205);
   --color-danger: #e28b82;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 25%);
@@ -236,8 +239,8 @@ textarea {
   border-radius: var(--radius-pill);
   white-space: nowrap;
   /* Fixed brand colors so the pill stays warm/legible in both themes. */
-  background: var(--pearl-beige);
-  color: var(--deep-space-blue);
+  background: var(--brand-color-2);
+  color: var(--brand-black);
 }
 
 .badge--accent {
