@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router';
 import { useVehicles } from '../composables/useVehicles';
 import VehicleFormModal from '../components/VehicleFormModal.vue';
 import type { Vehicle } from '../domain/vehicle';
+import { makeLogoUrl, onMakeLogoError } from '../data/makeLogos';
 
 const { vehicles, loading, error, refresh, remove } = useVehicles();
 
@@ -51,7 +52,12 @@ async function deleteVehicle(vehicle: Vehicle) {
     <ul v-else class="vehicle-list">
       <li v-for="vehicle in vehicles" :key="vehicle.id" class="vehicle-row card">
         <div class="vechicle-info">
-          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
+          <img
+              :src="makeLogoUrl(vehicle.make)"
+              class="icon-make"
+              alt=""
+              @error="onMakeLogoError"
+          />
           <RouterLink :to="`/vehicles/${vehicle.id}`" class="vehicle-name">{{ vehicle.name }}</RouterLink>
           <span class="vehicle-meta">
             {{ [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') }}

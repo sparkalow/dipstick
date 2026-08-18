@@ -5,6 +5,7 @@ import { useVehicles } from '../composables/useVehicles';
 import { useServiceRecords } from '../composables/useServiceRecords';
 import { getCurrentOdometer } from '../domain/vehicle';
 import { serviceTypes } from '../domain/serviceTypes';
+import { makeLogoUrl, onMakeLogoError } from '../data/makeLogos';
 
 const router = useRouter();
 
@@ -119,7 +120,12 @@ function goToVehicle(id: string) {
             class="vehicle-chip"
             @click="goToVehicle(vehicle.id)"
         >
-          <img :src="`/automotive-logos/${vehicle.make.toLowerCase()}.svg`" class="icon-make" alt="" />
+          <img
+              :src="makeLogoUrl(vehicle.make)"
+              class="icon-make"
+              alt=""
+              @error="onMakeLogoError"
+          />
           <span class="chip-name">{{ vehicle.name }}</span>
           <span class="chip-odo mono">{{ odometerLabel(vehicle.id) }}</span>
         </button>
