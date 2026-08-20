@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useVehicles } from '../composables/useVehicles';
 import { useServiceRecords } from '../composables/useServiceRecords';
 import { getCurrentOdometer } from '../domain/vehicle';
-import { serviceTypes } from '../domain/serviceTypes';
+import { badgeClass, distinctTypes, serviceTypeLabel } from '../domain/serviceTypes';
 import { makeLogoUrl, onMakeLogoError } from '../data/makeLogos';
 
 const router = useRouter();
@@ -34,9 +34,23 @@ const stats = computed(() => ({
 
 const currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
+const vehicleFilteredRecords = computed(() =>
+  records.value.filter((r) => vehicleFilter.value === 'all' || r.vehicleId === vehicleFilter.value),
+);
+
+// Type options come from the records actually present, and are derived *before* the
+// type filter is applied — otherwise picking a type would collapse the list of
+// options down to that one entry.
+const typeOptions = computed(() => distinctTypes(vehicleFilteredRecords.value));
+
+// Changing the vehicle filter can strand a type selection that no longer exists,
+// leaving an empty list with no visible cause. Fall back to "all types".
+watch(typeOptions, (options) => {
+  if (typeFilter.value !== 'all' && !options.includes(typeFilter.value)) typeFilter.value = 'all';
+});
+
 const filteredRecords = computed(() =>
-  records.value
-    .filter((r) => vehicleFilter.value === 'all' || r.vehicleId === vehicleFilter.value)
+  vehicleFilteredRecords.value
     .filter((r) => typeFilter.value === 'all' || r.type === typeFilter.value)
     .sort((a, b) => b.date.localeCompare(a.date)),
 );
@@ -45,10 +59,6 @@ function odometerLabel(vehicleId: string): string {
   const odo = getCurrentOdometer(records.value, vehicleId);
   const unit = vehicleById.value.get(vehicleId)?.odometerUnit ?? 'mi';
   return odo === undefined ? 'No readings yet' : `${odo.toLocaleString()} ${unit}`;
-}
-
-function badgeClass(type: string): string {
-  return serviceTypes[type as keyof typeof serviceTypes]?.accentBadge ? 'badge badge--accent' : 'badge';
 }
 
 function costLabel(cost: number | undefined): string {
@@ -79,8 +89,8 @@ function goToVehicle(id: string) {
             <span>Type</span>
             <select v-model="typeFilter">
               <option value="all">All types</option>
-              <option v-for="config in Object.values(serviceTypes)" :key="config.key" :value="config.key">
-                {{ config.label }}
+              <option v-for="type in typeOptions" :key="type" :value="type">
+                {{ serviceTypeLabel(type) }}
               </option>
             </select>
           </label>
@@ -92,7 +102,7 @@ function goToVehicle(id: string) {
 
       <ul v-else class="record-list">
         <li v-for="record in filteredRecords" :key="record.id" class="record-row card">
-          <span :class="badgeClass(record.type)">{{ serviceTypes[record.type].label }}</span>
+          <span :class="badgeClass(record.type)">{{ serviceTypeLabel(record.type) }}</span>
           <div class="record-main">
             <button type="button" class="record-vehicle" @click="goToVehicle(record.vehicleId)">
               {{ vehicleById.get(record.vehicleId)?.name ?? 'Unknown vehicle' }}

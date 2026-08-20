@@ -4,7 +4,7 @@ import { useRoute, RouterLink } from 'vue-router';
 import { useVehicles } from '../composables/useVehicles';
 import { useServiceRecords } from '../composables/useServiceRecords';
 import { useReceipts } from '../composables/useReceipts';
-import { serviceTypes } from '../domain/serviceTypes';
+import { badgeClass, getServiceType, serviceTypeLabel } from '../domain/serviceTypes';
 import { getCurrentOdometer } from '../domain/vehicle';
 import type { ServiceRecord } from '../domain/serviceRecord';
 import type { Receipt } from '../domain/receipt';
@@ -72,7 +72,7 @@ interface DetailEntry {
 }
 
 function detailEntries(record: ServiceRecord): DetailEntry[] {
-  return serviceTypes[record.type].fields
+  return getServiceType(record.type).fields
     .map((f) => ({
       label: f.label,
       value: formatValue((record.details as Record<string, unknown>)[f.key], f.unit),
@@ -88,10 +88,6 @@ function formatValue(raw: unknown, unit?: string): string {
 
 function costLabel(cost: number | undefined): string {
   return cost === undefined ? '—' : currencyFmt.format(cost);
-}
-
-function badgeClass(type: string): string {
-  return serviceTypes[type as keyof typeof serviceTypes]?.accentBadge ? 'badge badge--accent' : 'badge';
 }
 
 function print() {
@@ -166,7 +162,7 @@ function print() {
           <article v-for="record in sortedRecords" :key="record.id" class="entry">
             <div class="entry-head">
               <div class="entry-title">
-                <span :class="badgeClass(record.type)">{{ serviceTypes[record.type].label }}</span>
+                <span :class="badgeClass(record.type)">{{ serviceTypeLabel(record.type) }}</span>
                 <span class="entry-date mono">{{ record.date }}</span>
               </div>
               <div class="entry-meta mono">

@@ -6,7 +6,7 @@ import { useServiceRecords } from '../composables/useServiceRecords';
 import { useReceipts } from '../composables/useReceipts';
 import ServiceRecordForm from '../components/ServiceRecordForm.vue';
 import ReceiptPreviewModal from '../components/ReceiptPreviewModal.vue';
-import { serviceTypes } from '../domain/serviceTypes';
+import { badgeClass, distinctTypes, serviceTypeLabel } from '../domain/serviceTypes';
 import { getCurrentOdometer } from '../domain/vehicle';
 import type { ServiceRecord } from '../domain/serviceRecord';
 
@@ -23,9 +23,11 @@ const currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency
 
 const typeFilter = ref('all');
 
+// Derived from the records actually logged for this vehicle, not the registry —
+// custom types are unbounded, so enumerating them all would never stop growing.
 const filterChips = computed(() => [
   { key: 'all', label: 'All' },
-  ...Object.values(serviceTypes).map((c) => ({ key: c.key, label: c.label })),
+  ...distinctTypes(records.value).map((type) => ({ key: type, label: serviceTypeLabel(type) })),
 ]);
 
 const sortedRecords = computed(() =>
@@ -91,10 +93,6 @@ function closePreview() {
   previewRecordId.value = null;
 }
 
-function badgeClass(type: string): string {
-  return serviceTypes[type as keyof typeof serviceTypes]?.accentBadge ? 'badge badge--accent' : 'badge';
-}
-
 function costLabel(cost: number | undefined): string {
   return cost === undefined ? '—' : currencyFmt.format(cost);
 }
@@ -148,7 +146,7 @@ function costLabel(cost: number | undefined): string {
       <li v-for="record in sortedRecords" :key="record.id" class="record-row card">
         <div class="record-top">
           <div class="record-title">
-            <span :class="badgeClass(record.type)">{{ serviceTypes[record.type].label }}</span>
+            <span :class="badgeClass(record.type)">{{ serviceTypeLabel(record.type) }}</span>
             <span class="record-date">{{ record.date }}</span>
           </div>
           <span class="record-cost mono">{{ costLabel(record.cost) }}</span>

@@ -84,7 +84,7 @@ components / views (Vue)
 |---|---|---|---|
 | `id` | string (UUID) | yes | generated in `add()` |
 | `vehicleId` | string (UUID) | yes | FK → Vehicle |
-| `type` | string | yes | FK → ServiceType key (discriminator for `details`) |
+| `type` | string | yes | a built-in ServiceType key **or** a user-typed custom label (discriminator for `details`) |
 | `date` | string (ISO date) | yes | |
 | `odometer` | number | yes | |
 | `cost` | number | no | |
@@ -92,7 +92,9 @@ components / views (Vue)
 | `details` | JSON object | yes | shape determined by `type`; validated by that type's Zod schema. May be `{}` for types with no extra fields. |
 
 ### ServiceType
-A lookup used for categorizing/filtering and for driving the form. Each type is defined in config (§5), not a DB row you edit at runtime (though it may be seeded into a table if convenient). No interval fields — reminders are out of scope.
+A lookup used for categorizing/filtering and for driving the form. No interval fields — reminders are out of scope.
+
+Two types are **built-in**, defined in config (§5), not DB rows: `oil_change` and `tire_rotation`. Everything else is a **custom type** — a label the user types in the record form. A custom type has no `details` fields (`notes` carries the specifics) and is not stored as an entity of its own; it exists exactly as long as some record references it. Consequently every list of types shown in the UI — filters, and the picker's suggestions — is derived from the records present, never from the registry.
 
 ### Receipt
 Purchase receipts (photos / PDFs) for expenses on a service record. **Multiple per record.** Stored as native `Blob`s in a **separate** Dexie table keyed by `serviceRecordId` — never inline on the `ServiceRecord`.
@@ -142,8 +144,10 @@ interface ServiceTypeConfig<T extends z.ZodTypeAny = z.ZodTypeAny> {
 }
 ```
 
-- The discriminated union for `details` is **derived** from these schemas via `z.infer`.
-- Adding a new service type = one config object. No new component, no migration.
+- The union for `details` is **derived** from these schemas via `z.infer`, with one extra member for custom types (`{ type: string; details: {} }`).
+- `detailsSchema` is itself derived from `fields` (`schemaFromFields`), so the two can't drift.
+- Adding a new *built-in* type = one config object. No new component, no migration. But prefer a custom type unless the type genuinely needs structured `details` — the picker is a fixed three-button toggle (`Oil Change | Tire Rotation | Custom`), so each new built-in adds a button.
+- Widening `type` to `string` costs the negative half of the discriminated union: TS can no longer reject a built-in key paired with mismatched `details`. The repository's Zod validation (§7) is the guarantee.
 - A `select` with an `'other'` option stores the literal string `'other'` (no freeform companion). The common `notes` field captures specifics when needed.
 
 ### Seed type 1 — Oil Change (`oil_change`)
@@ -154,6 +158,9 @@ Populated `details`:
 | oil type | select | `conventional`, `synthetic blend`, `full synthetic`, `other` |
 | quantity (qts) | number | unit: `qts` |
 | oil filter part number | text | |
+
+### Custom types
+The user picks **Custom** in the form and types a label, with a typeahead over the custom labels already used so re-logging one is a click rather than a retype. Labels are trimmed and internally whitespace-collapsed on save; a label that collides with a built-in's key or label is rejected so it can't shadow one. Case variants ("Brake Pads" vs "brake pads") remain distinct types — the typeahead's case-insensitive matching surfaces the existing spelling to steer against drift, deliberately without overriding the user's own capitalization.
 
 ### Seed type 2 — Tire Rotation (`tire_rotation`)
 - **No `details` fields.** `fields: []`, `detailsSchema: z.object({})`.

@@ -104,8 +104,8 @@ components / views (Vue)
 ## Data model
 
 - **Vehicle**: `id`, `name` (required, primary UI identifier), `make`, `model`, `year`, `vin`, `odometerUnit` (`'mi' | 'km'`, default `'mi'`). `currentOdometer` is **never stored** — it's derived on demand as `max(odometer)` across that vehicle's service records (used to pre-fill the odometer field on a new entry).
-- **ServiceRecord**: `id`, `vehicleId` (FK), `type` (FK to a ServiceType key — discriminates `details`), `date`, `odometer`, `cost?`, `notes?` (freeform escape hatch), `details` (JSON, shape driven by `type`, validated by that type's Zod schema; `{}` allowed for types with no extra fields).
-- **ServiceType**: not a DB row — a config-defined lookup (see below) used for filtering and form generation. No interval/reminder fields.
+- **ServiceRecord**: `id`, `vehicleId` (FK), `type` (a **built-in key or a user-typed label** — discriminates `details`), `date`, `odometer`, `cost?`, `notes?` (freeform escape hatch), `details` (JSON, shape driven by `type`, validated by that type's Zod schema; `{}` allowed for types with no extra fields).
+- **ServiceType**: not a DB row. Two are **built-in** config objects (`oil_change`, `tire_rotation`); anything else is a **custom type** — a label the user types, with no `details` fields (`notes` is the escape hatch). Custom types aren't stored anywhere of their own: they exist exactly as long as a record references them, which is why filters and suggestions are derived from records, never from the registry. No interval/reminder fields.
 - **Receipt**: `id`, `serviceRecordId` (FK), `blob` (native `Blob`, **not base64**), `filename`, `mimeType`, `size`, `addedAt`. Stored in a **separate Dexie table**, never inlined on `ServiceRecord` — keeps list/dashboard reads lean since receipt bytes only load when a record is opened. Render via `URL.createObjectURL(blob)`; the composable that requests the URL owns revoking it. Soft ~5MB size guard (warn / optionally downscale images client-side) — no hard limit.
 - **Cascade delete**: Dexie has no FK cascade. `ServiceRecordRepository.delete()` must **explicitly** delete the record's receipts (same transaction).
 
@@ -119,21 +119,34 @@ interface FieldConfig {
   label: string;
   input: InputType;
   unit?: string;
-  options?: string[];       // for input: 'select'
+  options?: readonly string[];  // for input: 'select'
   required?: boolean;
 }
 
 interface ServiceTypeConfig<T extends z.ZodTypeAny = z.ZodTypeAny> {
   key: string;               // e.g. 'oil_change' — stored in ServiceRecord.type
   label: string;
-  detailsSchema: T;          // validates ServiceRecord.details
-  fields: FieldConfig[];     // drives the dynamic form; empty = common fields only
+  detailsSchema: T;                  // validates ServiceRecord.details; derived from `fields`
+  fields: readonly FieldConfig[];    // drives the dynamic form; empty = common fields only
 }
 ```
 
-The `details` discriminated union is *derived* from these configs via `z.infer` — never hand-write it. A `select` field's `'other'` option stores the literal string `'other'` (no freeform companion field); `notes` is where specifics go instead.
+The `details` union is *derived* from these configs via `z.infer` — never hand-write it. It has one member per built-in type, plus a custom member (`{ type: string; details: {} }`). A `select` field's `'other'` option stores the literal string `'other'` (no freeform companion field); `notes` is where specifics go instead.
 
-Seed types: `oil_change` (viscosity/type selects, quantity in qts, filter part number — all populated) and `tire_rotation` (`fields: []`, `detailsSchema: z.object({})` — the reference case proving the form renders correctly with common fields only).
+Built-in types: `oil_change` (viscosity/type selects, quantity in qts, filter part number — all populated) and `tire_rotation` (`fields: []` — the reference case proving the form renders correctly with common fields only).
+
+`detailsSchema` is **derived from `fields`**, never written alongside them: each field is built with `textField` / `numberField` / `dateField` / `selectField` (which carry their own Zod schema, and make `required: false` mean `.optional()`), and `schemaFromFields(fields)` assembles the object. `z.infer` still yields the literal enum unions.
+
+**Never index `serviceTypes` directly outside the domain module** — an unrecognized key is a custom type, not an error. Go through the accessors, all in `src/domain/serviceTypes.ts`:
+
+- `getServiceType(type)` — always returns a config; synthesizes a fields-free one for custom labels (cached, so object identity is stable for Vue).
+- `serviceTypeLabel(type)` / `badgeClass(type)` — display helpers shared by all three views.
+- `distinctTypes(records)` — the **only** way filter surfaces build their options: built-ins in registry order, then custom labels A–Z. Type filters are bounded by what's actually logged, so they never grow without limit.
+- `normalizeServiceType` / `validateServiceType` — trim/collapse whitespace, and reject a blank type or a custom label that collides with a built-in's key or label. Enforced in `DexieServiceRecordRepository` (which also persists the *parsed* details, so undeclared keys are stripped rather than stored) and surfaced inline by the form.
+
+The service-type picker is a fixed three-button toggle — `Oil Change | Tire Rotation | Custom` — where Custom swaps in `TypeaheadInput` over the labels already used (`useServiceRecords().getTypeSuggestions()`). Adding a built-in would mean adding a fourth button, so prefer a custom type unless the type needs structured `details`.
+
+**Tradeoff to know:** widening `type` to `string` means TS no longer rejects a built-in key paired with mismatched `details`; the repository's Zod check is the only guarantee. Keep it that way — validate at the boundary, not in components.
 
 ## Repository interface (contract)
 

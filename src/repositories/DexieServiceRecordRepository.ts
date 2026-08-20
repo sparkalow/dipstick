@@ -1,14 +1,18 @@
 import type { DipStickDB } from './db';
 import type { ServiceRecordRepository } from './types';
 import type { NewServiceRecord, ServiceRecord } from '../domain/serviceRecord';
-import { serviceTypes } from '../domain/serviceTypes';
+import { getServiceType, normalizeServiceType, validateServiceType } from '../domain/serviceTypes';
 
-function validateDetails(record: Pick<ServiceRecord, 'type' | 'details'>): void {
-  const config = serviceTypes[record.type];
-  if (!config) {
-    throw new Error(`Unknown service type: ${record.type}`);
+// An unrecognized type is a user-defined (custom) one, not an error — but it still
+// has to be a usable label, and its details still have to match the type's schema.
+// Returns the *parsed* details so what gets stored is the validated value, with any
+// keys the type doesn't declare stripped rather than persisted alongside it.
+function validatedDetails(record: Pick<ServiceRecord, 'type' | 'details'>): ServiceRecord['details'] {
+  const typeError = validateServiceType(record.type);
+  if (typeError) {
+    throw new Error(typeError);
   }
-  config.detailsSchema.parse(record.details);
+  return getServiceType(record.type).detailsSchema.parse(record.details) as ServiceRecord['details'];
 }
 
 export class DexieServiceRecordRepository implements ServiceRecordRepository {
@@ -31,8 +35,15 @@ export class DexieServiceRecordRepository implements ServiceRecordRepository {
   }
 
   async add(input: NewServiceRecord): Promise<ServiceRecord> {
-    validateDetails(input);
-    const record = { ...input, id: crypto.randomUUID() } as ServiceRecord;
+    const details = validatedDetails(input);
+    // Normalize here, not just in the form, so no caller can seed a padded or
+    // double-spaced near-duplicate of an existing custom type.
+    const record = {
+      ...input,
+      type: normalizeServiceType(input.type),
+      details,
+      id: crypto.randomUUID(),
+    } as ServiceRecord;
     await this.db.serviceRecords.add(record);
     return record;
   }
@@ -42,8 +53,12 @@ export class DexieServiceRecordRepository implements ServiceRecordRepository {
     if (!existing) {
       throw new Error(`Service record not found: ${id}`);
     }
-    const updated = { ...existing, ...patch, id } as ServiceRecord;
-    validateDetails(updated);
+    const merged = { ...existing, ...patch, id } as ServiceRecord;
+    const updated = {
+      ...merged,
+      type: normalizeServiceType(merged.type),
+      details: validatedDetails(merged),
+    } as ServiceRecord;
     await this.db.serviceRecords.put(updated);
     return updated;
   }

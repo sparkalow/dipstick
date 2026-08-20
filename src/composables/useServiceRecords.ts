@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { serviceRecordRepository } from '../repositories';
 import type { NewServiceRecord, ServiceRecord } from '../domain/serviceRecord';
+import { distinctTypes, isBuiltIn } from '../domain/serviceTypes';
 
 const records = ref<ServiceRecord[]>([]);
 const loading = ref(false);
@@ -69,6 +70,17 @@ async function remove(id: string): Promise<void> {
   }
 }
 
+/**
+ * Custom type labels already in use, for the "Custom" picker's suggestions.
+ * Deliberately reads the repository directly instead of going through `records` —
+ * the drawer opens over a vehicle-scoped list, and reassigning that shared ref
+ * would silently swap the page's records out from under it.
+ */
+async function getTypeSuggestions(): Promise<string[]> {
+  const all = await serviceRecordRepository.getAll();
+  return distinctTypes(all).filter((type) => !isBuiltIn(type));
+}
+
 export function useServiceRecords() {
-  return { records, loading, error, loadAll, loadByVehicle, add, update, remove };
+  return { records, loading, error, loadAll, loadByVehicle, add, update, remove, getTypeSuggestions };
 }

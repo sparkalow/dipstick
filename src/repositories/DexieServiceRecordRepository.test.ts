@@ -35,6 +35,14 @@ const validTireRotation = {
   details: {},
 } satisfies NewServiceRecord;
 
+const validCustom = {
+  vehicleId,
+  date: '2026-07-09',
+  odometer: 43000,
+  type: 'Brake Pads',
+  details: {},
+} satisfies NewServiceRecord;
+
 describe('DexieServiceRecordRepository', () => {
   it('add_validOilChangeDetails_generatesUuidAndPersists', async () => {
     const record = await repo.add(validOilChange);
@@ -131,5 +139,57 @@ describe('DexieServiceRecordRepository', () => {
     await expect(receiptRepo.getByServiceRecord(record.id)).resolves.toEqual([]);
     await expect(receiptRepo.getByServiceRecord(otherRecord.id)).resolves.toEqual([otherReceipt]);
     expect(ownReceipt.serviceRecordId).toBe(record.id);
+  });
+});
+
+describe('DexieServiceRecordRepository custom service types', () => {
+  it('add_customType_persistsWithEmptyDetails', async () => {
+    const record = await repo.add(validCustom);
+
+    expect(record.type).toBe('Brake Pads');
+    await expect(repo.get(record.id)).resolves.toEqual(record);
+  });
+
+  it('add_paddedCustomType_normalizesBeforePersisting', async () => {
+    const record = await repo.add({ ...validCustom, type: '  Brake   Pads ' });
+
+    // Otherwise it would show up as a second, near-identical filter entry.
+    expect(record.type).toBe('Brake Pads');
+    await expect(repo.get(record.id)).resolves.toMatchObject({ type: 'Brake Pads' });
+  });
+
+  it('add_blankCustomType_rejectsAndPersistsNothing', async () => {
+    await expect(repo.add({ ...validCustom, type: '   ' })).rejects.toThrow(/required/i);
+    await expect(repo.getAll()).resolves.toEqual([]);
+  });
+
+  it('add_customTypeMatchingBuiltInLabel_rejectsAndPersistsNothing', async () => {
+    await expect(repo.add({ ...validCustom, type: 'Oil Change' })).rejects.toThrow(/built-in/i);
+    await expect(repo.getAll()).resolves.toEqual([]);
+  });
+
+  it('add_customTypeWithUnexpectedDetails_stripsThemBeforePersisting', async () => {
+    const record = await repo.add({
+      ...validCustom,
+      details: { pads: 'ceramic' } as unknown as Record<string, never>,
+    });
+
+    expect(record.details).toEqual({});
+  });
+
+  it('update_builtInToCustomType_revalidatesAndPersists', async () => {
+    const created = await repo.add(validTireRotation);
+
+    const updated = await repo.update(created.id, { type: 'Brake Pads', details: {} });
+
+    expect(updated.type).toBe('Brake Pads');
+    await expect(repo.get(created.id)).resolves.toMatchObject({ type: 'Brake Pads' });
+  });
+
+  it('update_customToBuiltInTypeWithoutMatchingDetails_rejectsAndLeavesRecordIntact', async () => {
+    const created = await repo.add(validCustom);
+
+    await expect(repo.update(created.id, { type: 'oil_change' })).rejects.toThrow();
+    await expect(repo.get(created.id)).resolves.toEqual(created);
   });
 });

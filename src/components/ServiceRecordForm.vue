@@ -3,7 +3,15 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useServiceRecords } from '../composables/useServiceRecords';
 import { useReceipts } from '../composables/useReceipts';
 import { useVehicles } from '../composables/useVehicles';
-import { serviceTypes, type ServiceTypeKey } from '../domain/serviceTypes';
+import TypeaheadInput from './TypeaheadInput.vue';
+import {
+  getServiceType,
+  isBuiltIn,
+  normalizeServiceType,
+  serviceTypes,
+  validateServiceType,
+  type BuiltInServiceTypeKey,
+} from '../domain/serviceTypes';
 import type { NewServiceRecord, ServiceRecord } from '../domain/serviceRecord';
 
 const props = defineProps<{
@@ -20,7 +28,7 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const { add, update, error } = useServiceRecords();
+const { add, update, error, getTypeSuggestions } = useServiceRecords();
 const { vehicles, refresh: refreshVehicles } = useVehicles();
 const {
   receipts: existingReceipts,
@@ -31,7 +39,7 @@ const {
   getObjectUrl,
 } = useReceipts();
 
-const serviceTypeKeys = Object.keys(serviceTypes) as ServiceTypeKey[];
+const builtInTypeKeys = Object.keys(serviceTypes) as BuiltInServiceTypeKey[];
 
 // Vehicle: fixed when launched from a history page, chosen otherwise.
 const fixedVehicle = computed(() => props.record?.vehicleId ?? props.vehicleId);
@@ -39,7 +47,15 @@ const selectedVehicleId = ref<string>(fixedVehicle.value ?? '');
 const vehicleLocked = computed(() => fixedVehicle.value !== undefined);
 const selectedVehicle = computed(() => vehicles.value.find((v) => v.id === selectedVehicleId.value));
 
-const type = ref<ServiceTypeKey>(props.record?.type ?? serviceTypeKeys[0]);
+// The picker is three buttons: the two built-ins, plus "Custom" — which swaps in a
+// typeahead over the custom labels already used, so re-logging one is a click.
+const editingCustom = !!props.record && !isBuiltIn(props.record.type);
+const type = ref<BuiltInServiceTypeKey>(
+  props.record && !editingCustom ? (props.record.type as BuiltInServiceTypeKey) : builtInTypeKeys[0],
+);
+const customMode = ref(editingCustom);
+const customLabel = ref(editingCustom ? props.record!.type : '');
+const typeSuggestions = ref<string[]>([]);
 const date = ref(props.record?.date ?? '');
 const odometer = ref<number | undefined>(props.record?.odometer ?? props.currentOdometer);
 const cost = ref<number | undefined>(props.record?.cost);
@@ -49,13 +65,26 @@ const detailsForm = reactive<Record<string, unknown>>(
   props.record ? { ...(props.record.details as Record<string, unknown>) } : {},
 );
 
-const currentConfig = computed(() => serviceTypes[type.value]);
+const effectiveType = computed(() =>
+  customMode.value ? normalizeServiceType(customLabel.value) : type.value,
+);
+const currentConfig = computed(() => getServiceType(effectiveType.value));
 
-// Details only make sense for the type they were entered under — switching types clears them.
-watch(type, (newType, oldType) => {
+// Details only make sense for the type they were entered under — switching types
+// clears them. Watches the effective type so entering/leaving Custom also clears.
+watch(effectiveType, (newType, oldType) => {
   if (newType === oldType) return;
   for (const key of Object.keys(detailsForm)) delete detailsForm[key];
 });
+
+function selectBuiltIn(key: BuiltInServiceTypeKey) {
+  customMode.value = false;
+  type.value = key;
+}
+
+function selectCustom() {
+  customMode.value = true;
+}
 
 const validationError = ref<string | null>(null);
 const saving = ref(false);
@@ -77,6 +106,9 @@ const existingPreviewUrls = reactive<Record<string, string>>({});
 onMounted(() => {
   // Populate the picker when there's no fixed vehicle.
   if (!vehicleLocked.value && vehicles.value.length === 0) refreshVehicles();
+  getTypeSuggestions().then((types) => {
+    typeSuggestions.value = types;
+  });
   if (props.record) {
     loadByServiceRecord(props.record.id);
   }
@@ -162,6 +194,12 @@ async function submit() {
     return;
   }
 
+  const typeError = validateServiceType(effectiveType.value);
+  if (typeError) {
+    validationError.value = typeError;
+    return;
+  }
+
   const parsed = currentConfig.value.detailsSchema.safeParse(buildDetails());
   if (!parsed.success) {
     validationError.value = parsed.error.issues
@@ -179,7 +217,7 @@ async function submit() {
     odometer: odometerValue,
     cost: toNumberOrUndefined(cost.value),
     notes: notes.value.trim() || undefined,
-    type: type.value,
+    type: effectiveType.value,
     details: parsed.data,
   } as NewServiceRecord;
 
@@ -220,16 +258,31 @@ async function submit() {
           <span class="field-label">Service type</span>
           <div class="type-toggle">
             <button
-              v-for="key in serviceTypeKeys"
+              v-for="key in builtInTypeKeys"
               :key="key"
               type="button"
               class="type-option"
-              :class="{ 'type-option--active': type === key }"
-              @click="type = key"
+              :class="{ 'type-option--active': !customMode && type === key }"
+              @click="selectBuiltIn(key)"
             >
               {{ serviceTypes[key].label }}
             </button>
+            <button
+              type="button"
+              class="type-option"
+              :class="{ 'type-option--active': customMode }"
+              @click="selectCustom"
+            >
+              Custom
+            </button>
           </div>
+          <TypeaheadInput
+            v-if="customMode"
+            v-model="customLabel"
+            :options="typeSuggestions"
+            placeholder="e.g. Brake Pads"
+            class="custom-type-input"
+          />
         </div>
 
         <div class="field-row">
@@ -421,8 +474,15 @@ async function submit() {
   gap: var(--space-2);
 }
 
+.custom-type-input {
+  margin-top: var(--space-2);
+}
+
 .type-option {
   flex: 1;
+  /* Three options share the drawer's width, so keep each label on one line. */
+  white-space: nowrap;
+  padding-inline: var(--space-2);
   background: var(--color-card);
   color: var(--color-head);
   border: 1.5px solid var(--color-border);
