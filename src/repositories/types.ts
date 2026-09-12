@@ -25,3 +25,8 @@ export interface ReceiptRepository {
   delete(id: string): Promise<void>;
   getObjectUrl(id: string): Promise<string>;
 }
+
+export interface BackupRepository {
+  export(): Promise<Blob>;
+  import(file: Blob): Promise<void>; // replaces all existing data
+}

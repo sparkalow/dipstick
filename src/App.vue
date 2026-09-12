@@ -4,6 +4,7 @@ import { RouterLink, RouterView } from 'vue-router';
 import { useVehicles } from './composables/useVehicles';
 import { useTheme } from './composables/useTheme';
 import ServiceRecordForm from './components/ServiceRecordForm.vue';
+import BackupModal from './components/BackupModal.vue';
 
 const { vehicles, refresh } = useVehicles();
 const { theme, toggleTheme } = useTheme();
@@ -11,6 +12,7 @@ const { theme, toggleTheme } = useTheme();
 onMounted(refresh);
 
 const showLog = ref(false);
+const showBackup = ref(false);
 const hasVehicles = computed(() => vehicles.value.length > 0);
 </script>
 
@@ -62,7 +64,13 @@ const hasVehicles = computed(() => vehicles.value.length > 0);
       <RouterView />
     </main>
 
+    <footer class="app-footer no-print">
+      <span>Everything is stored in this browser only.</span>
+      <button type="button" class="btn--ghost btn--sm" @click="showBackup = true">Backup &amp; Restore</button>
+    </footer>
+
     <ServiceRecordForm v-if="showLog" @close="showLog = false" />
+    <BackupModal v-if="showBackup" @close="showBackup = false" />
   </div>
 </template>
 
@@ -172,5 +180,17 @@ const hasVehicles = computed(() => vehicles.value.length > 0);
   max-width: 1100px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-5) var(--space-6);
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-5);
+  font-size: 0.8125rem;
+  color: var(--color-body);
 }
 </style>

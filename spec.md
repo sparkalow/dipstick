@@ -219,6 +219,6 @@ interface ReceiptRepository {
 ## 8. Deferred / Open Decisions
 
 - **Backend stack** — not chosen. When cross-device data becomes a real limitation, implement `HttpServiceRepository` against the interface in §7 and mirror the Zod schemas server-side. Candidate stacks to evaluate *at that time*: Hono + SQLite, Fastify + Postgres, or a BaaS (Supabase / PocketBase). No decision needed now; nothing in this spec forecloses any of them.
-- **Data export/import** — not specified. Consider a JSON export as a low-effort backup/migration aid before the backend exists (optional, not required for v1).
+- ~~**Data export/import**~~ — **built.** A footer "Backup & Restore" link exports the whole database to a file and restores from one, via the `dexie-export-import` addon (receipt Blobs included). Restore replaces all data and reloads the page. See `BackupRepository` in §7.
 
 ---

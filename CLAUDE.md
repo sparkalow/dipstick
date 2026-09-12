@@ -51,6 +51,7 @@ approved dependencies:
 - vitest
 - fake-indexeddb
 - @fontsource/space-grotesk, @fontsource/inter, @fontsource/jetbrains-mono (self-hosted brand fonts, imported in `src/main.ts`; offline-safe, no external runtime dependency)
+- dexie-export-import (full-DB backup/restore; Blob-safe, so receipt bytes survive a round-trip). Kept behind `BackupRepository` and loaded with a dynamic `import()` inside `DexieBackupRepository`, so its ~64 kB serializer registry is a lazy chunk, never part of the main bundle.
 
 disallowed dependencies:
 - axios
@@ -174,6 +175,11 @@ interface ReceiptRepository {
   delete(id: string): Promise<void>;
   getObjectUrl(id: string): Promise<string>;   // createObjectURL; caller/composable owns revoke
 }
+
+interface BackupRepository {
+  export(): Promise<Blob>;
+  import(file: Blob): Promise<void>;   // replaces all existing data
+}
 ```
 
 `add`/`update` on service records must validate `details` against the matching service type's Zod schema **before** persisting — invalid data never enters the store.
@@ -193,6 +199,23 @@ Add/edit a service record is a **modal/drawer, not a route** (keeps logging fast
 
 Light + dark themes are driven entirely by semantic CSS custom properties in `src/style.css`: the `:root` block is light, a `:root[data-theme='dark']` block overrides only surfaces/borders/text (nav + accent tokens are shared). Components must reference the semantic tokens (`--color-card/head/body/...`), never raw brand hexes, so both themes stay correct. The active theme is an attribute on `<html>` set before first paint by an inline bootstrap in `index.html` (no flash) and managed via `useTheme` (persisted to `localStorage`, **default dark**).
 
+## Backup & restore
+
+A footer link (`App.vue` → `BackupModal.vue` → `useBackup` → `BackupRepository`) exports the
+whole database to a file and restores from one, via the `dexie-export-import` addon.
+
+- **Restore replaces, it does not merge** (`clearTablesBeforeImport`), and the page is
+  reloaded afterwards — the data composables are module-level singletons, so a reload is the
+  only reliable way to clear stale state after a wholesale replacement.
+- `DexieBackupRepository.export()` re-wraps each `receipt.blob` as a plain `Blob` before
+  serializing. `ReceiptRepository.add` stores the picked `File` as-is, and the addon routes
+  anything tagged `File` through a codec that reads bytes with a **synchronous
+  XMLHttpRequest**; plain Blobs take its own base64 path instead. Don't remove that
+  transform.
+- `src/test/setup.ts` polyfills `self` and a minimal `FileReader` — browser globals the addon
+  needs that Vitest's `node` environment lacks. They're environment shims, like
+  fake-indexeddb, not stand-ins for anything this project owns.
+
 ## Deferred / explicitly out of scope
 
 Do not build these unless the user asks — they are deliberately deferred in the spec:
@@ -200,4 +223,3 @@ Do not build these unless the user asks — they are deliberately deferred in th
 - User accounts / auth
 - Cross-device sync
 - A hosted backend (`HttpServiceRepository` is a stub interface for later; no backend stack has been chosen — candidates are Hono+SQLite, Fastify+Postgres, or a BaaS like Supabase/PocketBase)
-- Data export/import (optional future JSON export, not required for v1)
